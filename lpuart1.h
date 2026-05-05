@@ -23,5 +23,6 @@ void LPUART_ESC_Print( const char* message );
 void LPUART1_IRQHandler( void );
 void Instruction_4( void );
 void LPUART_PrintCharAt(uint8_t row, uint8_t col, char c);
+void LPUART_PrintBorder( void );
 
 #endif /* INC_LPUART1_H_ */
