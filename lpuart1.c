@@ -159,3 +159,32 @@ void LPUART_PrintCharAt(uint8_t row, uint8_t col, char c) {
     sprintf(buf, "\x1B[%d;%dH%c", row, col, c);
     LPUART_Print(buf);
 }
+
+/*******************************************
+ * Draft: Generate border outline for game *
+ *******************************************/
+void LPUART_PrintBorder( void ){
+	int rowMax = 24;
+	int colMax = 80;
+	
+	// CLEAR SCREEN
+	LPUART_ESC_Print("[2J");
+
+	// TOP ROW BORDER
+	LPUART_ESC_Print("[H"); //MOVE CURSOR TO UPPER LEFT CORNER
+	for(int iCol = 1; iCol <= colMax; iCol++){ //PRINT ROW
+		LPUART_Print('#');
+	}
+	
+	// L/R SIDE BORDER
+	for(int iRow = 2; iRow <= (rowMax - 1); iRow++){
+		LPUART_PrintCharAt(iRow, 1, '#'); // PRINT LEFT COL
+		LPUART_PrintCharAt(iRow, colMax, '#'); // PRINT RIGHT COL
+	}
+
+	// BOTTOM ROW BORDER
+	LPUART_ESC_Print("[24;1H"); //MOVE CURSOR TO BOTTOM LEFT CORNER
+	for(int iCol = 1; iCol <= colMax; iCol++){ //PRINT ROW
+		LPUART_Print('#');
+	}
+}
