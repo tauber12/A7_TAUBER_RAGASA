@@ -28,18 +28,22 @@ int main(void)
   SystemClock_Config();
   INIT_Lpuart1();
   //Instruction_4();
-  LPUART_ESC_Print("[0m");
+  LPUART_ESC_Print("[?25l");
+  GameSplashScreen();
+  HAL_Delay(5000);
+  GameScreenClear();
+  LPUART_ESC_Print("[2J");
+  LPUART_PrintBorder();
 
   while (1)
   {
-
 	  if(	cursorUpdate ){ //set flag)
-	  	  LPUART_ESC_Print("[2J");
+	  	  //LPUART_ESC_Print("[2J");
+
 	  	  LPUART_PrintCharAt(cursorRow, cursorCol,'o');
 	  	  HAL_Delay(10);
 	  	  cursorUpdate = 0; //clear flag
 	  }
-
   }
 
 }
