@@ -10,15 +10,22 @@ volatile uint8_t cursorRow = 12;
 volatile uint8_t cursorCol = 40;
 volatile uint8_t cursorUpdate = 0;
 
+/*-----------------------------------------------------------------------------
+ * function : INIT_Lpuart1( )
+ * INs      : N/A
+ * OUTs     : N/A
+ * action   : Initializes LPUART1 virtual coms ports PG7(TX) and PG8(RX)
+ *            Configures LPUART1 via CR1
+ * authors  : Alex Tauber
+ * usage    : main.c: main()
+ *----------------------------------------------------------------------------*/
 void INIT_Lpuart1( void ){
 
 	PWR->CR2 |= (PWR_CR2_IOSV);              // power avail on PG[15:2] (LPUART1)
 	RCC->AHB2ENR |= (RCC_AHB2ENR_GPIOGEN);   // enable GPIOG clock
 	RCC->APB1ENR2 |= RCC_APB1ENR2_LPUART1EN; // enable LPUART clock bridge
-	/* USER: configure GPIOG registers MODER/PUPDR/OTYPER/OSPEEDR then
-	   select AF mode and specify which function with AFR[0] and AFR[1] */
+	
 	// PG7 (TX) and PG8 (RX) initialization for LPUART functionality
-
 	// alternate function mode 2b'10
 	LPUART1_PORT->MODER &= ~(GPIO_MODER_MODE7 | GPIO_MODER_MODE8);
 	LPUART1_PORT->MODER |= (GPIO_MODER_MODE7_1 | GPIO_MODER_MODE8_1);
@@ -42,7 +49,7 @@ void INIT_Lpuart1( void ){
 
 	//set 115.2kbps baud rate with 4MHz clk
 
-   LPUART1->BRR = (256UL * 4000000UL) / 115200UL;
+	LPUART1->BRR = (256UL * 4000000UL) / 115200UL;
 
 	LPUART1->CR1 &= ~(USART_CR1_M1 | USART_CR1_M0); // 8-bit data
 	LPUART1->CR1 |= USART_CR1_UE;                   // enable LPUART1
@@ -56,7 +63,15 @@ void INIT_Lpuart1( void ){
 
 }
 
-
+/*-----------------------------------------------------------------------------
+ * function : LPUART_Print( )
+ * INs      : String of characters (inc. string-terminating NULL)
+ * OUTs     : N/A
+ * action   : Takes string input and transmits each character via TDR
+ * authors  : Alex Tauber
+ * usage    : lpuart1.c: LPUART_ESC_Print(), Instruction_4(), 
+ *            SetCharCenter(), LPUART_PrintCharAt()
+ *----------------------------------------------------------------------------*/
 void LPUART_Print( const char* message ) {
    uint16_t iStrIdx = 0;
    while ( message[iStrIdx] != 0 ) {
@@ -67,6 +82,16 @@ void LPUART_Print( const char* message ) {
    }
 }
 
+/*-----------------------------------------------------------------------------
+ * function : LPUART_ESC_Print( )
+ * INs      : String of characters (inc. string-terminating NULL)
+ * OUTs     : N/A
+ * action   : Takes string input and transmits ESC codes
+ * authors  : Alex Tauber
+ * usage    : lpuart1.c: LPUART_IRQHandler(), Instruction_4(), 
+ *            GameSplashScreen(), LPUART_PrintBorder()
+ *            main.c: main()
+ *----------------------------------------------------------------------------*/
 void LPUART_ESC_Print( const char* message ){
 
 	while( !(LPUART1->ISR & USART_ISR_TXE) );
@@ -75,7 +100,14 @@ void LPUART_ESC_Print( const char* message ){
 
 }
 
-
+/*-----------------------------------------------------------------------------
+ * function : LPUART1_IRQHandler( ) - Game Version
+ * INs      : 
+ * OUTs     : 
+ * action   : 
+ * authors  : Alex Tauber
+ * usage    : main.c: main()
+ *----------------------------------------------------------------------------*/
 void LPUART1_IRQHandler( void ) {
 
 	// hold previous state **must have static declaration
@@ -97,14 +129,17 @@ void LPUART1_IRQHandler( void ) {
 			case 2:
 				LPUART_PrintCharAt(cursorRow,cursorCol, ' ');
 				switch (charRecv){
-
-					case 'A': cursorRow = (cursorRow == 2) ? 23 : cursorRow - 1; //up
+					//up
+					case 'A': cursorRow = (cursorRow == 2) ? 23 : cursorRow - 1;
 					break;
-					case 'B': cursorRow = (cursorRow == 23) ? 2 : cursorRow + 1;  //down
+					//down
+					case 'B': cursorRow = (cursorRow == 23) ? 2 : cursorRow + 1;
 					break;
-					case 'C': cursorCol = (cursorCol == 79) ? 2 : cursorCol + 1;  //right
+					//right
+					case 'C': cursorCol = (cursorCol == 79) ? 2 : cursorCol + 1;
 					break;
-					case 'D': cursorCol = (cursorCol == 2) ? 79 : cursorCol - 1;  //left
+					//left
+					case 'D': cursorCol = (cursorCol == 2) ? 79 : cursorCol - 1;
 					break;
 				}
 				cursorUpdate = 1; // set flag
@@ -116,6 +151,14 @@ void LPUART1_IRQHandler( void ) {
 
 }
 
+/*-----------------------------------------------------------------------------
+ * function : LPUART1_IRQHandler( ) - Echo Characters Version
+ * INs      : 
+ * OUTs     : 
+ * action   : 
+ * authors  : Alex Tauber
+ * usage    : main.c: main()
+ *----------------------------------------------------------------------------*/
 /*
 void LPUART1_IRQHandler( void ) {
    uint8_t charRecv;
@@ -135,6 +178,14 @@ void LPUART1_IRQHandler( void ) {
    }
 } */
 
+/*-----------------------------------------------------------------------------
+ * function : LPUART1_IRQHandler( ) - Game Version
+ * INs      : 
+ * OUTs     : 
+ * action   : 
+ * authors  : Alex Tauber
+ * usage    : main.c: main()
+ *----------------------------------------------------------------------------*/
 void Instruction_4( void ){
 	LPUART_ESC_Print("[2J");
 	LPUART_ESC_Print("[3B");
@@ -148,7 +199,16 @@ void Instruction_4( void ){
 	LPUART_ESC_Print("[0m");
 	LPUART_Print("Input: ");
 }
-// helper funcs
+
+/*-----------------------------------------------------------------------------
+ * function : LPUART1_IRQHandler( ) - Game Version
+ * INs      : N/A
+ * OUTs     : N/A
+ * action   : Helper function used while developing game
+ *            sets character at center of screen (terminal)
+ * authors  : Alex Tauber
+ * usage    : N/A
+ *----------------------------------------------------------------------------*/
 void SetCharCenter( void ){
 	cursorRow = 12;
 	cursorCol = 40;
@@ -158,48 +218,54 @@ void SetCharCenter( void ){
 
 
 /*-----------------------------------------------------------------------------
- * function : LCD_PrintCharAt( )
- * INs      :
- * OUTs     :
- * action   :
- * authors  :
- * version  : 0.1
- * date     :
- * usage    :
+ * function : LPUART_PrintCharAt( )
+ * INs      : Terminal {Row, Col} and Char to print
+ * OUTs     : N/A
+ * action   : Prints Char at {Row, Col}
+ * authors  : Alex Tauber
+ * usage    : lpuart1.c: LPUART1_IRQHandler(), GameSplashScreen(), 
+ *            GameScreenClear(), LPuART_PrintBorder()
  *----------------------------------------------------------------------------*/
-
 void LPUART_PrintCharAt(uint8_t row, uint8_t col, char c) {
     char buf[16];
     sprintf(buf, "\x1B[%d;%dH%c", row, col, c);
     LPUART_Print(buf);
 }
 
+/*-----------------------------------------------------------------------------
+ * function : GameSplashScreen( )
+ * INs      : N/A
+ * OUTs     : N/A
+ * action   : Displays splash screen for game (Designed using textpaint.com)
+ * authors  : Alex Tauber, Tyler Ragasa
+ * usage    : main.c: main()
+ *----------------------------------------------------------------------------*/
 void GameSplashScreen( void ) {
-    const char *art[] = { //ascii art generated by ChatGPT
-        "******************************************************************************",
-        "*                                                                              *",
-        "*                         M O V I N G   O   A R O U N D                        *",
-        "*                                                                              *",
-        "*                                                                              *",
-        "*                 .--------------------------------------------.               *",
-        "*                /                                              \\             *",
-        "*               |        o     o     o     o     o     o        |              *",
-        "*               |                                                |             *",
-        "*               |                 \\   O   /                      |            *",
-        "*               |                  \\  |  /                       |            *",
-        "*               |                   \\ | /                        |            *",
-        "*               |                    \\|/                         |            *",
-        "*               |                     O                          |             *",
-        "*               |                    /|\\                         |            *",
-        "*               |                   / | \\                        |            *",
-        "*               |                  /  |  \\                       |            *",
-        "*               |                 /   O   \\                      |            *",
-        "*                \\                                              /             *",
-        "*                 '--------------------------------------------'               *",
-        "*                                                                              *",
-        "*                         Game Loading..............                           *",
-        "*                                                                              *",
-        "******************************************************************************"
+    const char *art[] = { // Splash screen art
+"********************************************************************************",
+"*                                                                              *",
+"*                                                                              *",
+"*                    __  __  _____  _  _  ____  _  _   ___                     *",
+"*                   (  \/  )(  _  )( \/ )(_  _)( \( ) / __)                    *",
+"*                    )    (  )(_)(  \  /  _)(_  )  ( ( (_-.                    *",
+"*                   (_/\/\_)(_____)  \/  (____)(_)\_) \___/                    *",
+"*                                                                              *",
+"*                                    _____                                     *",
+"*                                   (  _  )                                    *",
+"*                                    )(_)(                                     *",
+"*                                   (_____)                                    *",
+"*                                                                              *",
+"*                     __    ____  _____  __  __  _  _  ____                    *",
+"*                    /__\  (  _ \(  _  )(  )(  )( \( )(  _ \                   *",
+"*                   /(  )\  )   / )(_)(  )(__)(  )  (  )(_) )                  *",
+"*                  (__)(__)(_)\_)(_____)(______)(_)\_)(____/                   *",
+"*                                                                              *",
+"*                                                                              *",
+"*                                                                              *",
+"*                           Game Loading ..........                            *",
+"*                                                                              *",
+"*                                                                              *",
+"********************************************************************************"
     };
 
     int row, col;
@@ -215,6 +281,14 @@ void GameSplashScreen( void ) {
 
 }
 
+/*-----------------------------------------------------------------------------
+ * function : GameScreenClear( )
+ * INs      : N/A
+ * OUTs     : N/A
+ * action   : "Animation" between GameSplashScreen and running game.
+ * authors  : Alex Tauber
+ * usage    : main.c: main()
+ *----------------------------------------------------------------------------*/
 void GameScreenClear( void ){
 	int row, col;
 	for (row = 0; row < 24; row++) {
@@ -224,9 +298,14 @@ void GameScreenClear( void ){
 	    }
 }
 
-/*******************************************
- * Draft: Generate border outline for game *
- *******************************************/
+/*-----------------------------------------------------------------------------
+ * function : LPUART_PrintBorder( )
+ * INs      : N/A
+ * OUTs     : N/A
+ * action   : Displays border to outline "gameplay area" 
+ * authors  : Tyler Ragasa :>
+ * usage    : main.c: main()
+ *----------------------------------------------------------------------------*/
 void LPUART_PrintBorder( void ){
 	int rowMax = 24;
 	int colMax = 80;
