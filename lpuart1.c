@@ -120,25 +120,26 @@ void LPUART1_IRQHandler( void ) {
 
       // use state machine to check if any arrow key pressed
       switch ( escState ){
-			case 0:
+			case 0: // Anticipating ESC code
 				escState = (charRecv == 0x1B) ? 1:0;
 				break;
-			case 1:
+			case 1: // 
 				escState = (charRecv == '[') ? 2:0;
 				break;
 			case 2:
+				// Clear character @ current pos before moving. 'O' -> ' '
 				LPUART_PrintCharAt(cursorRow,cursorCol, ' ');
 				switch (charRecv){
-					//up
+					//up: if @ top border go to bottom else move up 1
 					case 'A': cursorRow = (cursorRow == 2) ? 23 : cursorRow - 1;
 					break;
-					//down
+					//down: if @ bottom border go to top else move down 1
 					case 'B': cursorRow = (cursorRow == 23) ? 2 : cursorRow + 1;
 					break;
-					//right
+					//right: if @ right border go to left else move right 1
 					case 'C': cursorCol = (cursorCol == 79) ? 2 : cursorCol + 1;
 					break;
-					//left
+					//left: if @ left border go to right, else move left 1
 					case 'D': cursorCol = (cursorCol == 2) ? 79 : cursorCol - 1;
 					break;
 				}
@@ -155,7 +156,8 @@ void LPUART1_IRQHandler( void ) {
  * function : LPUART1_IRQHandler( ) - Echo Characters Version
  * INs      : 
  * OUTs     : 
- * action   : 
+ * action   : Uses ESC codes to send char to and from (echo) Nucleo. Once the
+ *            terminal recieves char, ESC code sets appropriate char color
  * authors  : Alex Tauber
  * usage    : main.c: main()
  *----------------------------------------------------------------------------*/
@@ -179,29 +181,30 @@ void LPUART1_IRQHandler( void ) {
 } */
 
 /*-----------------------------------------------------------------------------
- * function : LPUART1_IRQHandler( ) - Game Version
- * INs      : 
- * OUTs     : 
- * action   : 
+ * function : Instruction_4( )
+ * INs      : N/A
+ * OUTs     : N/A
+ * action   : Executes series of ESC codes and Print to terminal per EE329
+ *            lab manual Instruction 4 - "Use VT100 Escape Codes"
  * authors  : Alex Tauber
  * usage    : main.c: main()
  *----------------------------------------------------------------------------*/
 void Instruction_4( void ){
-	LPUART_ESC_Print("[2J");
-	LPUART_ESC_Print("[3B");
-	LPUART_ESC_Print("[5C");
+	LPUART_ESC_Print("[2J"); // Clear entire screen
+	LPUART_ESC_Print("[3B"); // Cursor down 3 lines
+	LPUART_ESC_Print("[5C"); // Cursor right 5 spaces
 	LPUART_Print("All good students read the");
-	LPUART_ESC_Print("[1B");
-	LPUART_ESC_Print("[21D");
-	LPUART_ESC_Print("[5m");
+	LPUART_ESC_Print("[1B"); // Cursor down 1 line
+	LPUART_ESC_Print("[21D"); // Cursor left 21 spaces
+	LPUART_ESC_Print("[5m"); // Change text to blinking mode
 	LPUART_Print("Reference Manual");
-	LPUART_ESC_Print("[H");
-	LPUART_ESC_Print("[0m");
+	LPUART_ESC_Print("[H"); // Cursor top left
+	LPUART_ESC_Print("[0m"); // Remove atributes
 	LPUART_Print("Input: ");
 }
 
 /*-----------------------------------------------------------------------------
- * function : LPUART1_IRQHandler( ) - Game Version
+ * function : SetCharCenter()
  * INs      : N/A
  * OUTs     : N/A
  * action   : Helper function used while developing game
@@ -228,6 +231,7 @@ void SetCharCenter( void ){
  *----------------------------------------------------------------------------*/
 void LPUART_PrintCharAt(uint8_t row, uint8_t col, char c) {
     char buf[16];
+	// Equivalently: "ESC[{row};{col}H"+"{c}"
     sprintf(buf, "\x1B[%d;%dH%c", row, col, c);
     LPUART_Print(buf);
 }
@@ -270,8 +274,8 @@ void GameSplashScreen( void ) {
 
     int row, col;
 
-    LPUART_ESC_Print("[2J");
-    LPUART_ESC_Print("[H");
+    LPUART_ESC_Print("[2J"); // Clear screen
+    LPUART_ESC_Print("[H"); // Cursor top left
 
     for (row = 0; row < 24; row++) {
         for (col = 0; col < 80; col++) {
@@ -286,6 +290,7 @@ void GameSplashScreen( void ) {
  * INs      : N/A
  * OUTs     : N/A
  * action   : "Animation" between GameSplashScreen and running game.
+ *            Fills screen top to bottom, left to right with '#'
  * authors  : Alex Tauber
  * usage    : main.c: main()
  *----------------------------------------------------------------------------*/
@@ -316,7 +321,7 @@ void LPUART_PrintBorder( void ){
 	// T/B ROW BORDER
 	LPUART_ESC_Print("[H"); //MOVE CURSOR TO UPPER LEFT CORNER
 	for(int iCol = 1; iCol <= colMax; iCol++){
-		LPUART_PrintCharAt(1, iCol, '-'); // tPRINT TOP ROW
+		LPUART_PrintCharAt(1, iCol, '-'); // PRINT TOP ROW
 		LPUART_PrintCharAt(rowMax, iCol, '-'); // PRINT BOTTOM ROW
 	}
 
