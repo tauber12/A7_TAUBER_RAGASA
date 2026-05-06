@@ -27,25 +27,25 @@ int main(void)
   HAL_Init();
   SystemClock_Config();
   INIT_Lpuart1();
+  
   //Instruction_4();
-  LPUART_ESC_Print("[?25l");
+  LPUART_ESC_Print("[?25l"); // Hide cursor
   GameSplashScreen();
   HAL_Delay(5000);
   GameScreenClear();
   LPUART_ESC_Print("[2J");
   LPUART_PrintBorder();
 
+  // Game functionality to move character
   while (1)
   {
-	  if(	cursorUpdate ){ //set flag)
-	  	  //LPUART_ESC_Print("[2J");
-
+	  if(	cursorUpdate ){ // flag set in LPUART1_IRQHandler()
+	  	  //LPUART_ESC_Print("[2J"); // Clear screen
 	  	  LPUART_PrintCharAt(cursorRow, cursorCol,'o');
 	  	  HAL_Delay(10);
 	  	  cursorUpdate = 0; //clear flag
 	  }
   }
-
 }
 
 /**
